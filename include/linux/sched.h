@@ -1607,7 +1607,7 @@ struct task_struct {
 	struct llist_node wake_entry;
 	int on_cpu;
 #ifdef CONFIG_THREAD_INFO_IN_TASK
-	unsigned int cpu;       /* current CPU */
+	unsigned int cpu;	/* current CPU */
 #endif
 	unsigned int wakee_flips;
 	unsigned long wakee_flip_decay_ts;
@@ -3106,6 +3106,7 @@ static inline struct thread_info *task_thread_info(struct task_struct *task)
  * try_get_task_stack() instead.  task_stack_page will return a pointer
  * that could get freed out from under you.
  */
+
 static inline void *task_stack_page(const struct task_struct *task)
 {
 	return task->stack;
