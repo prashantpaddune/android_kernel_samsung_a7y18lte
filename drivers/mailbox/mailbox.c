@@ -380,7 +380,6 @@ struct mbox_chan *mbox_request_channel(struct mbox_client *cl, int index)
 	return chan;
 }
 EXPORT_SYMBOL_GPL(mbox_request_channel);
-
 /**
  * mbox_free_channel - The client relinquishes control of a mailbox
  *			channel by this call.
