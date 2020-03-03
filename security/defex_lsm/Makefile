@@ -42,25 +42,19 @@ ifeq ($(CACHES_ENABLE), true)
     EXTRA_CFLAGS += -DDEFEX_CACHES_ENABLE
 endif
 
-ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
-    obj-y += defex_debug.o
-    EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_SP
-    EXTRA_CFLAGS += -DDEFEX_DEBUG_ENABLE
-    EXTRA_CFLAGS += -DDEFEX_SYSFS_ENABLE
-endif
-
 ifeq ($(SEC_BUILD_OPTION_VTS), true)
-$(warning [DEFEX] VTS true $(SEC_BUILD_OPTION_VTS))
 EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_SP
 EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_PED
-else
-$(warning [DEFEX] VTS false $(SEC_BUILD_OPTION_VTS))
 endif
 
 ifeq ($(CONFIG_SEC_FACTORY), y)
 EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_SP
 EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_PED
 endif
+
+# Set Defex to Permissive
+EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_SP
+EXTRA_CFLAGS += -DDEFEX_PERMISSIVE_PED
 
 ifneq ($(wildcard  $(srctree)/$(src)/pack_rules.c),)
     EXTRA_CFLAGS += -DDEFEX_USE_PACKED_RULES
