@@ -1197,13 +1197,6 @@ static void binder_do_set_priority(struct task_struct *task,
 			priority = MIN_NICE;
 		} else if (priority > max_rtprio) {
 			priority = max_rtprio;
-
-	if (mm) {
-		down_write(&mm->mmap_sem);
-		if (!mmget_still_valid(mm)) {
-			if (allocate == 0)
-				goto free_range;
-			goto err_no_vma;
 		}
 	}
 
