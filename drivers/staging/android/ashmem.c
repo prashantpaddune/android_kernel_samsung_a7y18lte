@@ -365,13 +365,8 @@ static int ashmem_vmfile_mmap(struct file *file, struct vm_area_struct *vma)
 
 static unsigned long
 ashmem_vmfile_get_unmapped_area(struct file *file, unsigned long addr,
-<<<<<<< HEAD
-			unsigned long len, unsigned long pgoff,
-			unsigned long flags)
-=======
 				unsigned long len, unsigned long pgoff,
 				unsigned long flags)
->>>>>>> a349db843c64... staging: android: ashmem: Disallow ashmem memory from being remapped
 {
 	return current->mm->get_unmapped_area(file, addr, len, pgoff, flags);
 }
