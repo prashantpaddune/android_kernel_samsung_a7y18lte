@@ -175,12 +175,6 @@ static struct dentry *zs_stat_root;
 static struct vfsmount *zsmalloc_mnt;
 #endif
 
-#ifdef CONFIG_ZSWAP_MIGRATION_SUPPORT
-static int zs_page_migration_enabled = 1;
-#else
-static int zs_page_migration_enabled;
-#endif
-
 /*
  * We assign a page to ZS_ALMOST_EMPTY fullness group when:
  *	n <= N / f, where
@@ -1988,9 +1982,6 @@ static bool zs_page_isolate(struct page *page, isolate_mode_t mode)
 	 * Page is locked so zspage couldn't be destroyed. For detail, look at
 	 * lock_zspage in free_zspage.
 	 */
-	if (!zs_page_migration_enabled)
-		return false;
-
 	VM_BUG_ON_PAGE(!PageMovable(page), page);
 	VM_BUG_ON_PAGE(PageIsolated(page), page);
 
