@@ -2584,6 +2584,15 @@ static int __init exynos_ss_init(void)
 #endif
 		register_reboot_notifier(&nb_reboot_block);
 		atomic_notifier_chain_register(&panic_notifier_list, &nb_panic_block);
+
+#ifdef CONFIG_SEC_DEBUG
+#ifdef CONFIG_SEC_DEBUG_SNAPSHOT_DISABLE
+		if (sec_debug_get_debug_level() == 0) {
+			exynos_ss_set_enable("log_kevents", false);
+			pr_err("%s: disabled by debug level\n", __func__);
+		}
+#endif
+#endif
 	} else
 		pr_err("exynos-snapshot: %s failed\n", __func__);
 

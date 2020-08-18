@@ -9994,11 +9994,15 @@ static int hmp_selective_migration(int prev_cpu, struct sched_entity *se)
 	 * waiting time
 	 */
 	if (is_boosted_task) {
-		min_load = hmp_domain_min_load(&firstboost,&min_cpu, tsk_cpus_allowed(p));
-		if(min_load) {
-			min_load = hmp_domain_min_load(&secondboost,&min_cpu, tsk_cpus_allowed(p));
-			if(min_load)
-				min_load = hmp_domain_min_load(&logical_nonboost,&min_cpu, tsk_cpus_allowed(p));
+		if (p->prio <= 110 && cpuset_task_is_pinned(p)) {
+			min_load = hmp_domain_min_load(&firstboost,&min_cpu, tsk_cpus_allowed(p));
+		} else {
+			min_load = hmp_domain_min_load(&firstboost,&min_cpu, tsk_cpus_allowed(p));
+			if (min_load) {
+				min_load = hmp_domain_min_load(&secondboost,&min_cpu, tsk_cpus_allowed(p));
+				if (min_load)
+					min_load = hmp_domain_min_load(&logical_nonboost,&min_cpu, tsk_cpus_allowed(p));
+			}
 		}
 	} else {
 		min_load = hmp_domain_min_load(&logical_nonboost,&min_cpu, tsk_cpus_allowed(p));

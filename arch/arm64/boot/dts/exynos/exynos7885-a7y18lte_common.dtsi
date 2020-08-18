@@ -2118,9 +2118,9 @@
 		status = "okay";
 
 		bootc {
-			bootc,time_spec_user = <50000>; /* user binary user build */
-			bootc,time_spec_eng = <80000>; /* user binary eng build */
-			bootc,time_spec_fac = <50000>; /* factory binary */
+			bootc,time_spec_user = <100000>; /* user binary user build */
+			bootc,time_spec_eng = <100000>; /* user binary eng build */
+			bootc,time_spec_fac = <100000>; /* factory binary */
 		};
 	};
 

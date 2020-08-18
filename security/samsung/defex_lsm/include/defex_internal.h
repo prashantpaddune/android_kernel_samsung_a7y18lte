@@ -18,7 +18,7 @@
 #include "defex_config.h"
 
 #define DEFEX_MAJOR_VERSION			2
-#define DEFEX_MINOR_VERSION			5
+#define DEFEX_MINOR_VERSION			6
 #define DEFEX_REVISION				"rel"
 
 /* DEFEX Features */
@@ -87,6 +87,36 @@ void creds_fast_hash_init(void);
 #define uid_set_value(x, v)	(x = v)
 #endif /* STRICT_UID_TYPE_CHECKS */
 
+#ifdef DEFEX_PED_BASED_ON_TGID_ENABLE
+#	define REF_PID(p) (p)
+#else
+#	define REF_PID(p) ((p)->pid)
+#endif /* DEFEX_PED_BASED_ON_TGID_ENABLE */
+
+#define CRED_FLAGS_PROOT    		(1 << 0)	/* parent is root */
+#define CRED_FLAGS_MAIN_UPDATED		(1 << 1)	/* main thread's permission updated */
+#define CRED_FLAGS_SUB_UPDATED		(1 << 2)	/* sub thread's permission updated */
+
+#define GET_CREDS(x, y, z, w) uid = cred_data->x; \
+		fsuid = cred_data->y; \
+		egid = cred_data->z; \
+		cred_flags = cred_data->w;
+
+#define GET_CREDS_OBJ(x, y, z, w) uid = obj->cred_data.x; \
+		fsuid = obj->cred_data.y; \
+		egid = obj->cred_data.z; \
+		cred_flags = obj->cred_data.w;
+
+#define SET_CREDS(x, y, z, w) cred_data->x = uid; \
+		cred_data->y = fsuid; \
+		cred_data->z = egid; \
+		cred_data->w |= cred_flags;
+
+#define SET_CREDS_OBJ(x, y, z, w) obj->cred_data.x = uid; \
+		obj->cred_data.y = fsuid; \
+		obj->cred_data.z = egid; \
+		obj->cred_data.w |= cred_flags;
+
 struct defex_privesc {
 	struct kobject kobj;
 	unsigned int status;
@@ -106,9 +136,15 @@ extern struct defex_privesc *global_privesc_obj;
 ssize_t task_defex_privesc_store_status(struct defex_privesc *privesc_obj,
 		struct privesc_attribute *attr, const char *buf, size_t count);
 
-void get_task_creds(int pid, unsigned int *uid_ptr, unsigned int *fsuid_ptr, unsigned int *egid_ptr, unsigned int *p_root_ptr);
-int set_task_creds(int pid, unsigned int uid, unsigned int fsuid, unsigned int egid, unsigned int p_root);
+#ifdef DEFEX_PED_BASED_ON_TGID_ENABLE
+void get_task_creds(struct task_struct *p, unsigned int *uid_ptr, unsigned int *fsuid_ptr, unsigned int *egid_ptr, unsigned short *cred_flags_ptr);
+int set_task_creds(struct task_struct *p, unsigned int uid, unsigned int fsuid, unsigned int egid, unsigned short cred_flags);
+void set_task_creds_tcnt(struct task_struct *p, int addition);
+#else
+void get_task_creds(int pid, unsigned int *uid_ptr, unsigned int *fsuid_ptr, unsigned int *egid_ptr, unsigned short *cred_flags_ptr);
+int set_task_creds(int pid, unsigned int uid, unsigned int fsuid, unsigned int egid, unsigned short cred_flags);
 void delete_task_creds(int pid);
+#endif /* DEFEX_PED_BASED_ON_TGID_ENABLE */
 int is_task_creds_ready(void);
 
 /* -------------------------------------------------------------------------- */

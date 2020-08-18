@@ -793,7 +793,7 @@ static int s6e3fa7_read_id(struct lcd_info *lcd)
 		priv->lcdconnected = lcd->connected = 0;
 		dev_info(&lcd->ld->dev, "%s: connected lcd is invalid\n", __func__);
 
-		if (!lcdtype && decon)
+		if (lcdtype && decon)
 			decon_abd_save_bit(&decon->abd, BITS_PER_BYTE * LDI_LEN_ID, cpu_to_be32(lcd->id_info.value), LDI_BIT_DESC_ID);
 	}
 
@@ -2580,6 +2580,11 @@ static ssize_t poc_mca_show(struct device *dev,
 	struct lcd_info *lcd = dev_get_drvdata(dev);
 	int ret = 0;
 	unsigned int i = 0;
+	struct seq_file m = {
+		.buf = buf,
+		.size = PAGE_SIZE - 1,
+		.count = 0,
+	};
 
 	if (lcd->state != PANEL_STATE_RESUMED) {
 		dev_info(&lcd->ld->dev, "%s: state is %d\n", __func__, lcd->state);
@@ -2592,7 +2597,7 @@ static ssize_t poc_mca_show(struct device *dev,
 
 	for (i = 0 ; i < LDI_LEN_POC_EC ; i++) {
 		dev_info(&lcd->ld->dev, "%s EC[%d]: 0x%02x\n", __func__, i, lcd->poc_ec[i]);
-		snprintf(buf, PAGE_SIZE, "%s%02X ", buf, lcd->poc_ec[i]);
+		seq_printf(&m, "%02X ", lcd->poc_ec[i]);
 	}
 
 	return strlen(buf);

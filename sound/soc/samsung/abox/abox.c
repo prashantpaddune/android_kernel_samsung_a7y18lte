@@ -5447,13 +5447,13 @@ static int abox_disable(struct device *dev)
 
 	clk_disable(data->clk_ca7);
 
+	abox_request_dram_on(data->pdev, dev, false);
+
 	abox_gic_disable_irq(&data->pdev_gic->dev);
 
 	cancel_work_sync(&data->change_cpu_gear_work);
 
 	abox_failsafe_report_reset(dev);
-
-	abox_request_dram_on(data->pdev, dev, false);
 
 	return 0;
 }

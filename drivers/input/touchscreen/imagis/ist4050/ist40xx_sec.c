@@ -1154,6 +1154,24 @@ err:
 		   (int)strnlen(buf, sizeof(buf)));
 }
 
+static void fod_lp_mode(void *dev_data)
+{
+	char buf[32] = { 0 };
+	struct sec_cmd_data *sec = (struct sec_cmd_data *)dev_data;
+	struct ist40xx_data *data = container_of(sec, struct ist40xx_data, sec);
+
+	sec_cmd_set_default_result(sec);
+
+	data->fod_lp_mode = sec->cmd_param[0];
+
+	input_info(true, &data->client->dev, "%s: fod_lp_mode %d\n", __func__, data->fod_lp_mode);
+
+	snprintf(buf, sizeof(buf), "%s", "OK");
+	sec_cmd_set_cmd_result(sec, buf, strnlen(buf, sizeof(buf)));
+	sec->cmd_state = SEC_CMD_STATUS_OK;
+	sec_cmd_set_cmd_exit(sec);
+}
+
 static void get_threshold(void *dev_data)
 {
 	char buf[16] = { 0 };
@@ -5030,6 +5048,7 @@ struct sec_cmd sec_cmds[] = {
 	{SEC_CMD("get_aod_rect", get_aod_rect),},
 	{SEC_CMD("singletap_enable", singletap_enable),},
 	{SEC_CMD("fod_enable", fod_enable),},
+	{SEC_CMD_H("fod_lp_mode", fod_lp_mode),},
 	{SEC_CMD("get_cp_array", get_cp_array),},
 	{SEC_CMD("get_self_cp_array", get_self_cp_array),},
 	{SEC_CMD("get_prox_cp_array", get_prox_cp_array),},

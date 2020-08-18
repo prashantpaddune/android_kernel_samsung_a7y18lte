@@ -1426,7 +1426,7 @@ static int s2mu005_get_monout_avgvbat(struct s2mu005_fuelgauge_data *fuelgauge)
 		s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, S2MU005_REG_MONOUT_SEL, 0x27);
 	}
 
-	mdelay(50);
+	msleep(50);
 
 	if (s2mu005_read_reg(fuelgauge->i2c, S2MU005_REG_MONOUT, data) < 0)
 		goto err;
@@ -2023,7 +2023,7 @@ static int s2mu005_fg_set_property(struct power_supply *psy,
 				if (fuelgauge->revision >= 3) {
 					u8 reg_0x41 = 0, reg_0x27 = 0, reg_0x26 = 0, temp = 0;
 					pr_info("%s, swelling SOC jump issue W/A\n", __func__);
-					mdelay(250);
+					msleep(250);
 
 					s2mu005_read_reg_byte(fuelgauge->i2c, 0x41, &reg_0x41);
 					s2mu005_read_reg_byte(fuelgauge->i2c, 0x27, &reg_0x27);
@@ -2036,7 +2036,7 @@ static int s2mu005_fg_set_property(struct power_supply *psy,
 					s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x27, temp);
 					s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x26, 0xFD);
 
-					mdelay(260);
+					msleep(260);
 
 					s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x26, reg_0x26);
 					s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x27, reg_0x27);
@@ -2098,7 +2098,7 @@ static int s2mu005_fg_set_property(struct power_supply *psy,
 						temp &= 0xCF;
 						temp |= 0x10;
 						s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x25, temp);
-						mdelay(1000);
+						msleep(1000);
 						s2mu005_restart_gauging(fuelgauge);
 						s2mu005_fg_reset_capacity_by_jig_connection(fuelgauge);
 						s2mu005_fg_test_read(fuelgauge->i2c);
@@ -2109,7 +2109,7 @@ static int s2mu005_fg_set_property(struct power_supply *psy,
 						temp &= 0xCF;
 						temp |= 0x30;
 						s2mu005_write_and_verify_reg_byte(fuelgauge->i2c, 0x25, temp);
-						mdelay(1000);
+						msleep(1000);
 						s2mu005_restart_gauging(fuelgauge);
 						s2mu005_fg_test_read(fuelgauge->i2c);
 						pr_info("%s: SEC_BAT_INBAT_FGSRC_SWITCHING_OFF : 0x25 = %x\n",

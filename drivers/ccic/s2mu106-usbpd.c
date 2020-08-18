@@ -129,6 +129,20 @@ static void s2mu106_usbpd_test_read(struct s2mu106_usbpd_data *usbpd_data)
 										data[5], data[6], data[7], data[8]);
 }
 
+static void s2mu106_usbpd_init_tx_hard_reset(struct s2mu106_usbpd_data *usbpd_data)
+{
+	struct i2c_client *i2c = usbpd_data->i2c;
+
+	s2mu106_usbpd_write_reg(i2c, S2MU106_REG_MSG_SEND_CON, S2MU106_REG_MSG_SEND_CON_SOP_HardRST
+			| S2MU106_REG_MSG_SEND_CON_OP_MODE);
+
+	s2mu106_usbpd_write_reg(i2c, S2MU106_REG_MSG_SEND_CON, S2MU106_REG_MSG_SEND_CON_SOP_HardRST
+			| S2MU106_REG_MSG_SEND_CON_OP_MODE
+			| S2MU106_REG_MSG_SEND_CON_SEND_MSG_EN);
+
+	pr_info("%s, \n", __func__);
+}
+
 void s2mu106_rprd_mode_change(struct s2mu106_usbpd_data *usbpd_data, u8 mode)
 {
 	u8 data = 0;
@@ -1260,7 +1274,8 @@ static int s2mu106_set_power_role(void *_data, int val)
 	struct usbpd_data *data = (struct usbpd_data *) _data;
 	struct s2mu106_usbpd_data *pdic_data = data->phy_driver_data;
 
-	pr_info("%s, power_role(%d)\n", __func__, val);
+	pr_info("%s, power_role(%d->%d)\n", __func__,
+			pdic_data->power_role, val);
 
 	if (val == USBPD_SINK) {
 		pdic_data->is_pr_swap = true;
@@ -3318,7 +3333,7 @@ static void s2mu106_usbpd_init_configure(struct s2mu106_usbpd_data *_data)
 		s2mu106_set_normal_mode(_data);
 		msleep(25);
 		_data->detach_valid = true;
-		s2mu106_set_lpm_mode(_data);
+		s2mu106_usbpd_init_tx_hard_reset(_data);
 		_data->detach_valid = false;
 		s2mu106_usbpd_set_cc_control(_data, USBPD_CC_OFF);
 		_data->lpm_mode = true;

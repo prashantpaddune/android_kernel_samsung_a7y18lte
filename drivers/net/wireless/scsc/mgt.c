@@ -1361,7 +1361,7 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 
 							       { SLSI_PSID_UNIFI_HARDWARE_PLATFORM, {0, 0} },
 							       { SLSI_PSID_UNIFI_REG_DOM_VERSION, {0, 0} },
-							       { SLSI_PSID_UNIFI_NAN_ENABLED, {0, 0} },
+							       { SLSI_PSID_UNIFI_NAN_ACTIVATED, {0, 0} },
 							       { SLSI_PSID_UNIFI_DEFAULT_DWELL_TIME, {0, 0} },
 #ifdef CONFIG_SCSC_WLAN_WIFI_SHARING
 							       { SLSI_PSID_UNIFI_WI_FI_SHARING5_GHZ_CHANNEL, {0, 0} },
@@ -1377,15 +1377,18 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 #ifdef CONFIG_SCSC_WLAN_STA_ENHANCED_ARP_DETECT
 							       { SLSI_PSID_UNIFI_ARP_DETECT_ACTIVATED, {0, 0} },
 #endif
-							       { SLSI_PSID_UNIFI_APF_ENABLED, {0, 0} },
-							       { SLSI_PSID_UNIFI_SOFT_AP40_MHZ_ON24G, {0, 0} }
+#ifdef CONFIG_SCSC_WLAN_STA_APF
+							       { SLSI_PSID_UNIFI_APF_ACTIVATED, {0, 0} },
+#endif
+							       { SLSI_PSID_UNIFI_SOFT_AP40_MHZ_ON24G, {0, 0} },
+							       { SLSI_PSID_UNIFI_EXTENDED_CAPABILITIES, {0, 0} },
 							      };/*Check the mibrsp.dataLength when a new mib is added*/
 
 	r = slsi_mib_encode_get_list(&mibreq, sizeof(get_values) / sizeof(struct slsi_mib_get_entry), get_values);
 	if (r != SLSI_MIB_STATUS_SUCCESS)
 		return -ENOMEM;
 
-	mibrsp.dataLength = 194;
+	mibrsp.dataLength = 204;
 	mibrsp.data = kmalloc(mibrsp.dataLength, GFP_KERNEL);
 	if (!mibrsp.data) {
 		kfree(mibreq.data);
@@ -1576,15 +1579,23 @@ static int slsi_mib_initial_get(struct slsi_dev *sdev)
 		else
 			SLSI_DBG2(sdev, SLSI_MLME, "Enhanced Arp Detect is disabled!\n");
 #endif
+#ifdef CONFIG_SCSC_WLAN_STA_APF
 		if (values[++mib_index].type != SLSI_MIB_TYPE_NONE)  /* APF Support */
 			sdev->device_config.fw_apf_supported = values[mib_index].u.boolValue;
 		else
 			SLSI_DBG2(sdev, SLSI_MLME, "APF Support is disabled!\n");
-
+#endif
 		if (values[++mib_index].type != SLSI_MIB_TYPE_NONE)  /* 40MHz for Soft AP */
 			sdev->fw_SoftAp_2g_40mhz_enabled = values[mib_index].u.boolValue;
 		else
 			SLSI_DBG2(sdev, SLSI_MLME, "40MHz for Soft AP is disabled!\n");
+		if (values[++mib_index].type != SLSI_MIB_TYPE_NONE) {
+			sdev->fw_ext_cap_ie_len = values[mib_index].u.octetValue.dataLength;
+			memset(sdev->fw_ext_cap_ie, 0, sizeof(sdev->fw_ext_cap_ie));
+			memcpy(sdev->fw_ext_cap_ie, values[mib_index].u.octetValue.data,
+					sdev->fw_ext_cap_ie_len);
+		} else
+			SLSI_DBG2(sdev, SLSI_MLME, "Failed to read Extended capabilities\n");
 
 		kfree(values);
 	}
@@ -1769,6 +1780,7 @@ int slsi_mib_get_gscan_cap(struct slsi_dev *sdev, struct slsi_nl_gscan_capabilit
 }
 #endif
 
+#ifdef CONFIG_SCSC_WLAN_STA_APF
 int slsi_mib_get_apf_cap(struct slsi_dev *sdev, struct net_device *dev)
 {
 	struct slsi_mib_data                   mibreq = { 0, NULL };
@@ -1826,6 +1838,7 @@ int slsi_mib_get_apf_cap(struct slsi_dev *sdev, struct net_device *dev)
 	kfree(values);
 	return r;
 }
+#endif
 
 int slsi_mib_get_rtt_cap(struct slsi_dev *sdev, struct net_device *dev, struct slsi_rtt_capabilities *cap)
 {
@@ -2137,6 +2150,32 @@ int slsi_test_send_hanged_vendor_event(struct net_device *dev)
 	return slsi_send_hanged_vendor_event(ndev_vif->sdev, SCSC_PANIC_CODE_HOST << 15);
 }
 #endif
+
+int slsi_set_ext_cap(struct slsi_dev *sdev, struct net_device *dev, const u8 *ies, int ie_len, const u8 *ext_cap_mask)
+{
+	const u8              *ext_capab_ie;
+	int                   r = 0;
+
+	ext_capab_ie = cfg80211_find_ie(WLAN_EID_EXT_CAPABILITY, ies, ie_len);
+	if (ext_capab_ie) {
+		u8 ext_cap_ie_len = ext_capab_ie[1];
+		int i = 0;
+		bool set_ext_cap = false;
+
+		ext_capab_ie += 2; /* skip the EID and length*/
+		for (i = 0; i < ext_cap_ie_len; i++) {
+			/* Checking Supplicant's extended capability BITS with driver advertised mask.
+                         */
+			if ((~ext_cap_mask[i] & ext_capab_ie[i]) && !(~ext_cap_mask[i] & sdev->fw_ext_cap_ie[i])) {
+				set_ext_cap = true;
+				sdev->fw_ext_cap_ie[i] = sdev->fw_ext_cap_ie[i] | ext_capab_ie[i];
+			}
+		}
+		if (set_ext_cap)
+			r = slsi_mlme_set_ext_capab(sdev, dev, sdev->fw_ext_cap_ie, sdev->fw_ext_cap_ie_len);
+	}
+	return r;
+}
 
 static bool slsi_search_ies_for_qos_indicators(struct slsi_dev *sdev, u8 *ies, int ies_len)
 {
@@ -2854,6 +2893,15 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct net_device *dev, u8 *pe
 		memset(&ndev_vif->enhanced_arp_stats, 0, sizeof(ndev_vif->enhanced_arp_stats));
 		ndev_vif->enhanced_arp_detect_enabled = false;
 #endif
+
+#ifdef CONFIG_SCSC_WLAN_WES_NCHO
+		SLSI_MUTEX_LOCK(sdev->device_config_mutex);
+		sdev->device_config.ncho_mode = 0;
+		sdev->device_config.roam_scan_mode = 0;
+		sdev->device_config.dfs_scan_mode = 0;
+		sdev->device_config.dfs_scan_mode = 0;
+		SLSI_MUTEX_UNLOCK(sdev->device_config_mutex);
+#endif
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
 		break;
@@ -2868,10 +2916,12 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct net_device *dev, u8 *pe
 			goto exit;
 		}
 
-		SLSI_NET_DBG3(dev, SLSI_MLME, "MAC:%pM\n", peer_address);
+		SLSI_NET_DBG3(dev, SLSI_MLME, "MAC:%pM is_wps:%d Peer State = %d\n", peer_address,  peer->is_wps, peer->connected_state);
 		slsi_fill_last_disconnected_sta_info(sdev, dev, peer_address, reason);
 		slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_DISCONNECTED);
-		if ((peer->connected_state == SLSI_STA_CONN_STATE_CONNECTED) || (peer->connected_state == SLSI_STA_CONN_STATE_DOING_KEY_CONFIG))
+		if (((peer->connected_state == SLSI_STA_CONN_STATE_CONNECTED) ||
+				(peer->connected_state == SLSI_STA_CONN_STATE_DOING_KEY_CONFIG)) &&
+				!(peer->is_wps))
 			cfg80211_del_sta(dev, peer->address, GFP_KERNEL);
 
 		slsi_spinlock_lock(&ndev_vif->peer_lock);

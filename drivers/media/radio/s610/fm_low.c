@@ -1675,7 +1675,7 @@ bool fm_aux_pll_initialize(void)
 void fm_ds_set(u32 data)
 {
 	fmspeedy_set_reg_field(0xFFF390, 7, (0x0003 << 7), data);
-	mdelay(10);
+	msleep(10);
 	dev_info(gradio->v4l2dev.dev,
 		"%s: DS set: 0x%xh, reg val: 0x%xh\n", __func__,
 		data, fmspeedy_get_reg(0xFFF390));

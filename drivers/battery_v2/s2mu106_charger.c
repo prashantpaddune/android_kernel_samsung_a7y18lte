@@ -116,11 +116,11 @@ static int s2mu106_charger_otg_control(
 		msleep(30);
 		/* 5. QBAT On even if BAT OCP occure */
 		s2mu106_update_reg(charger->i2c, S2MU106_CHG_CTRL9, 0x0, 0x10);
-		mdelay(10);
+		msleep(10);
 		/* 6. OTG Enable */
 		s2mu106_update_reg(charger->i2c,
 				S2MU106_CHG_CTRL0, OTG_BST_MODE, REG_MODE_MASK);
-		mdelay(20);
+		msleep(20);
 
 		/* OTG Fault debounce time set 15ms */
 		s2mu106_update_reg(charger->i2c, 0x94, 0x0C, 0x0C);
@@ -190,10 +190,10 @@ static void s2mu106_set_buck(
 		pr_info("[DEBUG]%s: check input current(%d, %d)\n",
 			__func__, prev_current, charger->input_current);
 		s2mu106_set_input_current_limit(charger, 50);
-		mdelay(50);
+		msleep(50);
 		/* async mode */
 		s2mu106_update_reg(charger->i2c, 0x3A, 0x03, 0x03);
-		mdelay(50);
+		msleep(50);
 		s2mu106_update_reg(charger->i2c, S2MU106_CHG_CTRL0, CHARGER_OFF_MODE, REG_MODE_MASK);
 		/* auto async mode */
 		s2mu106_update_reg(charger->i2c, 0x3A, 0x01, 0x03);

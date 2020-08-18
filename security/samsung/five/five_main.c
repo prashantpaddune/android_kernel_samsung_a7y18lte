@@ -46,7 +46,7 @@ static const bool unlink_on_error;	// false
 static const bool check_dex2oat_binary = true;
 static const bool check_memfd_file = true;
 
-static struct file *memfd_file;
+static struct file *memfd_file __ro_after_init;
 
 static struct workqueue_struct *g_five_workqueue;
 
@@ -817,7 +817,7 @@ static struct notifier_block five_reboot_nb = {
 	.priority = INT_MAX,
 };
 
-int five_hash_algo = HASH_ALGO_SHA1;
+int five_hash_algo __ro_after_init = HASH_ALGO_SHA1;
 
 static int __init hash_setup(const char *str)
 {

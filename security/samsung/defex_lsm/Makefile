@@ -4,6 +4,7 @@
 
 # Features to Enable
 PED_ENABLE=true
+PED_BASED_ON_TGID_ENABLE=true
 SAFEPLACE_ENABLE=true
 IMMUTABLE_ENABLE=true
 LP_ENABLE=true
@@ -53,6 +54,9 @@ endif
 ifeq ($(PED_ENABLE), true)
     obj-y += defex_priv.o
     DEFEX_DEFINES += -DDEFEX_PED_ENABLE
+ifeq ($(PED_BASED_ON_TGID_ENABLE), true)
+    DEFEX_DEFINES += -DDEFEX_PED_BASED_ON_TGID_ENABLE
+endif
 endif
 
 ifeq ($(SAFEPLACE_ENABLE), true)

@@ -28,7 +28,7 @@
 #define ENABLE 1
 #define DISABLE 0
 
-#define IVR_WORK_DELAY 50
+#define IVR_WORK_DELAY 150
 
 static char *s2mu205_supplied_to[] = {
 	"battery",
@@ -895,6 +895,24 @@ static int s2mu205_chg_set_property(struct power_supply *psy,
 		pr_info("%s: reset fuelgauge when surge occur!\n", __func__);
 */
 		break;
+	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX:
+      {
+		 u8 temp = 0;
+       		if (!factory_mode) {
+       				s2mu205_read_reg(charger->i2c, S2MU205_CHG_STATUS3, &temp);
+       				if (temp & IVR_STATUS) {
+               				pr_info("%s: IVR Start\n", __func__);
+               				wake_lock(&charger->ivr_wake_lock);
+               				/* Mask IRQ */
+               				s2mu205_update_reg(charger->i2c,
+                        				       S2MU205_CHG_INT2M, 1 << IVR_M_SHIFT, IVR_M_MASK);
+               				queue_delayed_work(charger->charger_wqueue, &charger->ivr_work,
+                        				       msecs_to_jiffies(IVR_WORK_DELAY));
+       				}
+			}
+
+		break;
+	}
 	case POWER_SUPPLY_PROP_MAX ... POWER_SUPPLY_EXT_PROP_MAX:
 		switch (ext_psp) {
 		case POWER_SUPPLY_EXT_PROP_FACTORY_VOLTAGE_REGULATION:
@@ -925,7 +943,7 @@ static int s2mu205_chg_set_property(struct power_supply *psy,
 				s2mu205_write_reg(charger->i2c, 0x70, 0x0);
 				s2mu205_update_reg(charger->i2c, S2MU205_CHG_CTRL0, 0x30, 0x30);
 
-				mdelay(100);
+				msleep(100);
 
 				/* QBAT off for prevent SMPL when detach cable */
 				s2mu205_update_reg(charger->i2c, 0x2A, 0xC0, 0xC0);
@@ -1207,7 +1225,7 @@ static void s2mu205_ivr_irq_work(struct work_struct *work)
 			reduce_input_current(charger);
 			ivr_cnt = 0;
 		}
-		mdelay(50);
+		msleep(50);
 
 		if (!(ivr_state & IVR_STATUS)) {
 			pr_info("%s: EXIT IVR WORK: check value (0x13:0x%02x, input current:%d)\n", __func__,
@@ -1390,6 +1408,7 @@ static int s2mu205_charger_probe(struct platform_device *pdev)
 	charger->otg_on = false;
 	charger->ivr_on = false;
 	charger->slow_charging = false;
+	charger->cable_type = SEC_BATTERY_CABLE_NONE;
 
 	charger->dev = &pdev->dev;
 	charger->i2c = s2mu205->i2c;
