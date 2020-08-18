@@ -596,6 +596,7 @@ void usbpd_reinit(struct device *dev)
 	usbpd_init_manager_val(pd_data);
 	reinit_completion(&pd_data->msg_arrived);
 	pd_data->wait_for_msg_arrived = 0;
+	pd_data->is_prswap = false;
 	complete(&pd_data->msg_arrived);
 }
 
@@ -642,6 +643,7 @@ int usbpd_init(struct device *dev, void *phy_driver_data)
 	INIT_WORK(&pd_data->worker, usbpd_policy_work);
 
 	init_completion(&pd_data->msg_arrived);
+	pd_data->is_prswap = false;
 
 	return 0;
 }

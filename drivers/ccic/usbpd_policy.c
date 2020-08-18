@@ -56,6 +56,7 @@ policy_state usbpd_policy_src_startup(struct policy_data *policy)
 	/* PD Protocol Initialization */
 	usbpd_init_protocol(pd_data);
 	pd_data->phy_ops.soft_reset(pd_data);
+	pd_data->phy_ops.set_rp_control(pd_data, PLUG_CTRL_RP80);
 
 	/* Fro tSrcrecover after PE_SRC_Transition_to_default */
 	if (policy->txhardresetflag == 1) {
@@ -942,6 +943,7 @@ policy_state usbpd_policy_snk_startup(struct policy_data *policy)
 
 	/* PD Protocol Initialization */
 	usbpd_init_protocol(pd_data);
+	pd_data->phy_ops.set_rp_control(pd_data, PLUG_CTRL_RP80);
 
 	/* Configuration Channel On */
 	//pd_data->phy_ops.set_cc_control(pd_data, USBPD_CC_ON);
@@ -1190,7 +1192,7 @@ policy_state usbpd_policy_snk_select_capability(struct policy_data *policy)
 policy_state usbpd_policy_snk_transition_sink(struct policy_data *policy)
 {
 	struct usbpd_data *pd_data = policy_to_usbpd(policy);
-	struct usbpd_manager_data *manager = &pd_data->manager;	
+	struct usbpd_manager_data *manager = &pd_data->manager;
 	int ret  = PE_SNK_Transition_Sink;
 	int ms = 0;
 	bool vbus_short = 0;
@@ -2077,7 +2079,7 @@ policy_state usbpd_policy_prs_src_snk_reject_pr_swap(struct policy_data *policy)
 
 	/* PD State Inform for AP */
 	dev_info(pd_data->dev, "%s\n", __func__);
-	
+
 
 	pd_data->phy_ops.get_data_role(pd_data, &data_role);
 
@@ -2222,6 +2224,9 @@ policy_state usbpd_policy_prs_src_snk_transition_to_off(struct policy_data *poli
 	if (ret == PE_PRS_SRC_SNK_Transition_off)
 		return ret;
 
+#if defined CONFIG_CCIC_S2MU004
+	pd_data->phy_ops.set_power_role(pd_data, USBPD_SOURCE);
+#endif
 	pd_data->phy_ops.pr_swap(pd_data, USBPD_SOURCE_OFF);
 
 	/* VBUS off */
@@ -2245,6 +2250,10 @@ policy_state usbpd_policy_prs_src_snk_transition_to_off(struct policy_data *poli
 	/* skip delay when GEARVR is attached */
 	if (manager->acc_type != CCIC_DOCK_HMT || manager->SVID_0 == 0)
 		msleep(600);
+#endif
+#if defined CONFIG_CCIC_S2MU004
+	if (ret == PE_PRS_SRC_SNK_Transition_off)
+		pd_data->phy_ops.set_power_role(pd_data, USBPD_DRP);
 #endif
 
 	return ret;
@@ -2474,6 +2483,8 @@ policy_state usbpd_policy_prs_snk_src_transition_to_off(struct policy_data *poli
 
 	while (1) {
 		if (policy->plug_valid == 0) {
+			pr_info("%s, plug_valid == 0\n", __func__);
+			pd_data->phy_ops.set_power_role(pd_data, USBPD_DRP);
 			ret = PE_PRS_SNK_SRC_Transition_off;
 			break;
 		}
@@ -6121,6 +6132,11 @@ void usbpd_policy_work(struct work_struct *work)
 		}
 	dev_info(pd_data->dev, "%s saved state %x next_state %x \n", __func__, saved_state, next_state);
 	} while (saved_state != next_state);
+
+#if defined CONFIG_CCIC_S2MU004
+	if (pd_data->is_prswap)
+		pd_data->phy_ops.set_power_role(pd_data, USBPD_DRP);
+#endif
 
 	policy->state = next_state;
 	dev_info(pd_data->dev, "%s Finished\n", __func__);

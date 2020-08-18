@@ -910,19 +910,18 @@ void usbpd_manager_acc_detach(struct device *dev)
 static int usbpd_manager_support_vdm(struct usbpd_data *pd_data,
 		usbpd_manager_command_type command)
 {
-	struct policy_data *policy = &pd_data->policy;
+	struct usbpd_manager_data *manager = &pd_data->manager;
+
 	switch (command) {
 	case MANAGER_REQ_VDM_DISCOVER_SVID:
-		/* Product Type 101b == AMA */
-		if (policy->rx_data_obj[1].id_header_vdo.Product_Type == 0x5) {
-			pr_info("%s, Discover ID == AMA\n", __func__);
-			return 1;
-		}
-		return 0;
 	case MANAGER_REQ_VDM_DISCOVER_MODE:
 	case MANAGER_REQ_VDM_ENTER_MODE:
 	case MANAGER_REQ_VDM_STATUS_UPDATE:
 	case MANAGER_REQ_VDM_DisplayPort_Configure:
+		if (manager->Vendor_ID == SAMSUNG_VENDOR_ID) {
+			pr_info("%s, Discover ID, VendorID == SAMSUNG \n", __func__);
+			return 1;
+		}
 #if defined(CONFIG_CCIC_ALTERNATE_MODE)
 		return 1;
 #else

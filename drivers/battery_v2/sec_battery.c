@@ -4943,7 +4943,7 @@ ssize_t sec_bat_show_attrs(struct device *dev,
 					POWER_SUPPLY_EXT_PROP_INBAT_VOLTAGE_FGSRC_SWITCHING, value);
 
 			for (j = 0; j < 5; j++) {
-				mdelay(200);
+				msleep(200);
 				psy_do_property(battery->pdata->fuelgauge_name, get,
 					POWER_SUPPLY_PROP_VOLTAGE_NOW, value);
 				ocv_data[j] = value.intval;

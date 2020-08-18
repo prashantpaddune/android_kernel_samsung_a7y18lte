@@ -1029,7 +1029,7 @@ static int slsi_gscan_add_mlme(struct slsi_dev *sdev, struct slsi_nl_gscan_param
 			if (gscan_param.bucket->report_events & SLSI_REPORT_EVENTS_NO_BATCH)
 				report_mode |= FAPI_REPORTMODE_NO_BATCH;
 		} else {
-			report_mode = FAPI_REPORTMODE_RESERVED;
+			report_mode = FAPI_REPORTMODE_BUFFER_FULL;
 		}
 
 		if (report_mode == 0) {
@@ -1428,6 +1428,10 @@ static int slsi_set_bssid_blacklist(struct wiphy *wiphy, struct wireless_dev *wd
 				goto exit;
 			}
 
+			if (nla_len(attr) < ETH_ALEN) {
+				ret = -EINVAL;
+				goto exit;
+			}
 			bssid = (u8 *)nla_data(attr);
 
 			SLSI_ETHER_COPY(acl_data->mac_addrs[i].addr, bssid);
@@ -1515,6 +1519,10 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 			break;
 
 		case MKEEP_ALIVE_ATTRIBUTE_IP_PKT:
+			if (nla_len(attr) < ip_pkt_len) {
+				 r = -EINVAL;
+				 goto exit;
+			}
 			ip_pkt = (u8 *)nla_data(attr);
 			break;
 
@@ -1526,10 +1534,18 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 			break;
 
 		case MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR:
+			if (nla_len(attr) < ETH_ALEN) {
+				r = -EINVAL;
+				goto exit;
+			}
 			dst_mac_addr = (u8 *)nla_data(attr);
 			break;
 
 		case MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR:
+			if (nla_len(attr) < ETH_ALEN) {
+				r = -EINVAL;
+				goto exit;
+			}
 			src_mac_addr = (u8 *)nla_data(attr);
 			break;
 
@@ -1556,7 +1572,7 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 	  */
 	slsi_mlme_send_frame_mgmt(sdev, net_dev, NULL, 0,
 				  FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME,
-				  FAPI_MESSAGETYPE_ANY_OTHER,
+				  FAPI_MESSAGETYPE_PERIODIC_OFFLOAD,
 				  ndev_vif->sta.keepalive_host_tag[index - 1], 0, 0, 0);
 
 	skb = slsi_alloc_skb(sizeof(struct ethhdr) + ip_pkt_len, GFP_KERNEL);
@@ -1595,7 +1611,7 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 	ip_send_check(ip_hdr(skb));
 
 	host_tag = slsi_tx_mgmt_host_tag(sdev);
-	r = slsi_mlme_send_frame_data(sdev, net_dev, skb, FAPI_MESSAGETYPE_ANY_OTHER, host_tag,
+	r = slsi_mlme_send_frame_data(sdev, net_dev, skb, FAPI_MESSAGETYPE_PERIODIC_OFFLOAD, host_tag,
 				      0, (period * 1000));
 	if (r == 0)
 		ndev_vif->sta.keepalive_host_tag[index - 1] = host_tag;
@@ -1669,7 +1685,7 @@ static int slsi_stop_keepalive_offload(struct wiphy *wiphy, struct wireless_dev 
 	}
 
 	r = slsi_mlme_send_frame_mgmt(sdev, net_dev, NULL, 0, FAPI_DATAUNITDESCRIPTOR_IEEE802_3_FRAME,
-				      FAPI_MESSAGETYPE_ANY_OTHER, ndev_vif->sta.keepalive_host_tag[index - 1], 0, 0, 0);
+				      FAPI_MESSAGETYPE_PERIODIC_OFFLOAD, ndev_vif->sta.keepalive_host_tag[index - 1], 0, 0, 0);
 	ndev_vif->sta.keepalive_host_tag[index - 1] = 0;
 
 exit:
@@ -1761,25 +1777,46 @@ static int slsi_set_epno_ssid(struct wiphy *wiphy,
 		type = nla_type(iter);
 		switch (type) {
 		case SLSI_ATTRIBUTE_EPNO_MINIMUM_5G_RSSI:
-			slsi_util_nla_get_u16(iter, &epno_params->min_5g_rssi);
+			if (slsi_util_nla_get_u16(iter, &epno_params->min_5g_rssi)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_MINIMUM_2G_RSSI:
-			slsi_util_nla_get_u16(iter, &epno_params->min_2g_rssi);
+			if (slsi_util_nla_get_u16(iter, &epno_params->min_2g_rssi)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_INITIAL_SCORE_MAX:
-			slsi_util_nla_get_u16(iter, &epno_params->initial_score_max);
+			if (slsi_util_nla_get_u16(iter, &epno_params->initial_score_max)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_CUR_CONN_BONUS:
-			slsi_util_nla_get_u8(iter, &epno_params->current_connection_bonus);
+			if (slsi_util_nla_get_u8(iter, &epno_params->current_connection_bonus)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_SAME_NETWORK_BONUS:
-			slsi_util_nla_get_u8(iter, &epno_params->same_network_bonus);
+			if (slsi_util_nla_get_u8(iter, &epno_params->same_network_bonus)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_SECURE_BONUS:
-			slsi_util_nla_get_u8(iter, &epno_params->secure_bonus);
+			if (slsi_util_nla_get_u8(iter, &epno_params->secure_bonus)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_5G_BONUS:
-			slsi_util_nla_get_u8(iter, &epno_params->band_5g_bonus);
+			if (slsi_util_nla_get_u8(iter, &epno_params->band_5g_bonus)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_SSID_LIST:
 			nla_for_each_nested(outer, iter, tmp) {
@@ -1792,7 +1829,10 @@ static int slsi_set_epno_ssid(struct wiphy *wiphy,
 			}
 			break;
 		case SLSI_ATTRIBUTE_EPNO_SSID_NUM:
-			slsi_util_nla_get_u8(iter, &val);
+			if (slsi_util_nla_get_u8(iter, &val)) {
+				r = -EINVAL;
+				goto exit;
+			}
 			num = (int)val;
 			if (num > SLSI_GSCAN_MAX_EPNO_SSIDS) {
 				SLSI_ERR(sdev, "Cannot support %d SSIDs. max %d\n", num, SLSI_GSCAN_MAX_EPNO_SSIDS);
@@ -2778,6 +2818,7 @@ static int slsi_set_country_code(struct wiphy *wiphy, struct wireless_dev *wdev,
 	return ret;
 }
 
+#ifdef CONFIG_SCSC_WLAN_STA_APF
 static int slsi_apf_read_filter(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len)
 {
 	int                               ret = 0;
@@ -2932,6 +2973,7 @@ exit:
 	SLSI_MUTEX_UNLOCK(sdev->device_config_mutex);
 	return ret;
 }
+#endif
 
 static int slsi_rtt_get_capabilities(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len)
 {
@@ -3581,7 +3623,7 @@ static int slsi_set_roaming_state(struct wiphy *wiphy, struct wireless_dev *wdev
 	}
 
 	SLSI_DBG1_NODEV(SLSI_GSCAN, "SUBCMD_SET_ROAMING_STATE roam_state = %d\n", roam_state);
-	ret = slsi_set_mib_roam(sdev, NULL, SLSI_PSID_UNIFI_ROAMING_ENABLED, roam_state);
+	ret = slsi_set_mib_roam(sdev, NULL, SLSI_PSID_UNIFI_ROAMING_ACTIVATED, roam_state);
 	if (ret < 0)
 		SLSI_ERR_NODEV("Failed to set roaming state\n");
 
@@ -5603,6 +5645,7 @@ static const struct wiphy_vendor_command     slsi_vendor_cmd[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = slsi_acs_init
 	},
+#ifdef CONFIG_SCSC_WLAN_STA_APF
 	{
 		{
 			.vendor_id = OUI_GOOGLE,
@@ -5627,6 +5670,7 @@ static const struct wiphy_vendor_command     slsi_vendor_cmd[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = slsi_apf_read_filter
 	},
+#endif
 	{
 		{
 			.vendor_id = OUI_GOOGLE,

@@ -210,8 +210,12 @@ static void s2mu004_pr_swap(void *_data, int val)
 	struct s2mu004_usbpd_data *pdic_data = data->phy_driver_data;
 
 	if (val == USBPD_SINK_OFF) {
+		pd_noti.event = PDIC_NOTIFY_EVENT_PD_PRSWAP_SNKTOSRC;
+		pd_noti.sink_status.selected_pdo_num = 0;
+		pd_noti.sink_status.available_pdo_num = 0;
+		pd_noti.sink_status.current_pdo_num = 0;
 		ccic_event_work(pdic_data, CCIC_NOTIFY_DEV_BATTERY,
-			CCIC_NOTIFY_ID_ATTACH, 0, 0);
+			CCIC_NOTIFY_ID_POWER_STATUS, 0, 0);
 	} else if (val == USBPD_SOURCE_ON) {
 #if defined(CONFIG_DUAL_ROLE_USB_INTF)
 		pdic_data->power_role_dual = DUAL_ROLE_PROP_PR_SRC;
@@ -222,8 +226,6 @@ static void s2mu004_pr_swap(void *_data, int val)
 		ccic_event_work(pdic_data, CCIC_NOTIFY_DEV_MUIC,
 			CCIC_NOTIFY_ID_ROLE_SWAP, 1/* source */, 0);
 	} else if (val == USBPD_SOURCE_OFF) {
-		ccic_event_work(pdic_data, CCIC_NOTIFY_DEV_BATTERY,
-			CCIC_NOTIFY_ID_ATTACH, 0, 0);
 #if defined(CONFIG_DUAL_ROLE_USB_INTF)
 		pdic_data->power_role_dual = DUAL_ROLE_PROP_PR_SNK;
 #elif defined(CONFIG_TYPEC)
@@ -1051,14 +1053,17 @@ static int s2mu004_set_power_role(void *_data, int val)
 
 	if (val == USBPD_SINK) {
 		pdic_data->is_pr_swap = true;
+		data->is_prswap = true;
 		s2mu004_assert_rd(data);
 		s2mu004_snk(pdic_data->i2c);
 	} else if (val == USBPD_SOURCE) {
 		pdic_data->is_pr_swap = true;
+		data->is_prswap = true;
 		s2mu004_assert_rp(data);
 		s2mu004_src(pdic_data->i2c);
 	} else if (val == USBPD_DRP) {
 		pdic_data->is_pr_swap = false;
+		data->is_prswap = false;
 		s2mu004_assert_drp(data);
 		return 0;
 	} else
@@ -2445,7 +2450,9 @@ static int s2mu004_check_port_detect(struct s2mu004_usbpd_data *pdic_data)
 
 		s2mu004_set_vconn_source(pd_data, USBPD_VCONN_ON);
 
-		msleep(tTypeCSinkWaitCap); /* dont over 310~620ms(tTypeCSinkWaitCap) */
+		s2mu004_assert_rp(pd_data);
+		msleep(100); /* dont over 310~620ms(tTypeCSinkWaitCap) */
+		s2mu004_assert_drp(pd_data);
 	} else {
 		dev_err(dev, "%s, PLUG Error\n", __func__);
 		return -1;

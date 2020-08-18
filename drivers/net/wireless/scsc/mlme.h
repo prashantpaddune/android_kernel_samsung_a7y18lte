@@ -257,8 +257,7 @@ int slsi_mlme_ndp_terminate(struct slsi_dev *sdev, struct net_device *dev, u16 n
 #endif
 #endif
 
-int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct net_device *dev, struct slsi_mib_value *mib_val);
-int slsi_mlme_set_hs2_ext_cap(struct slsi_dev *sdev, struct net_device *dev, const u8 *ies, int ie_len);
+int slsi_mlme_set_ext_capab(struct slsi_dev *sdev, struct net_device *dev, u8 *data, int datalength);
 int slsi_mlme_reassociate(struct slsi_dev *sdev, struct net_device *dev);
 void slsi_mlme_reassociate_resp(struct slsi_dev *sdev, struct net_device *dev);
 int slsi_modify_ies(struct net_device *dev, u8 eid, u8 *ies, int ies_len, u8 ie_index, u8 ie_value);
@@ -278,4 +277,6 @@ void slsi_decode_fw_rate(u16 fw_rate, struct rate_info *rate, unsigned long *dat
 int slsi_test_sap_configure_monitor_mode(struct slsi_dev *sdev, struct net_device *dev, struct cfg80211_chan_def *chandef);
 
 struct sk_buff *slsi_mlme_req_cfm(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb, u16 cfm_id);
+int slsi_mlme_set_roaming_parameters(struct slsi_dev *sdev, struct net_device *dev, u16 psid, int mib_value, int mib_length);
+
 #endif /*__SLSI_MLME_H__*/

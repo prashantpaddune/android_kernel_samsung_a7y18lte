@@ -289,7 +289,7 @@ static void s2mu205_reset_fg(struct s2mu205_fuelgauge_data *fuelgauge)
 
 	/* Dumpdone. Re-calculate SOC */
 	s2mu205_write_and_verify_reg_byte(fuelgauge->i2c, 0x1E, 0x0F);
-	mdelay(300);
+	msleep(300);
 
 	/* If it was voltage mode, recover it */
 	if (fuelgauge->mode == HIGH_SOC_VOLTAGE_MODE) {
@@ -561,7 +561,7 @@ static int s2mu205_get_cycle(struct s2mu205_fuelgauge_data *fuelgauge)
 	mutex_lock(&fuelgauge->fg_lock);
 
 	s2mu205_write_and_verify_reg_byte(fuelgauge->i2c, S2MU205_REG_MONOUT_SEL, 0x27);
-	mdelay(50);
+	msleep(50);
 
 	if (s2mu205_read_reg(fuelgauge->i2c, S2MU205_REG_MONOUT, data) < 0)
 		goto err;
@@ -1055,7 +1055,7 @@ batcap_learn_init:
 			s2mu205_write_and_verify_reg_byte(fuelgauge->i2c, 0x24, 0x01);
 			/* Dumpdone. Re-calculate SOC */
 			s2mu205_write_and_verify_reg_byte(fuelgauge->i2c, 0x1E, 0x0F);
-			mdelay(300);
+			msleep(300);
 			s2mu205_write_and_verify_reg_byte(fuelgauge->i2c, 0x24, 0x00);
 
 			/* Make report SOC 0% */
@@ -1742,7 +1742,7 @@ static int s2mu205_fg_set_property(struct power_supply *psy,
 						(val->intval == SEC_BAT_FGSRC_SWITCHING_ON)) {
 					/* Get Battery voltage (by I2C control) */
 					s2mu205_update_reg_byte(fuelgauge->i2c, 0x25, 0x10, 0x30);
-					mdelay(1000);
+					msleep(1000);
 					s2mu205_read_reg_byte(fuelgauge->i2c, 0x25, &temp);
 					pr_info("%s: SW Vbat: fgsrc_switching_on: REG25:0x%02x, 0x25[5:4]=0x%x\n", __func__, temp, (temp & 0x30) >> 4);
 					if (val->intval == SEC_BAT_INBAT_FGSRC_SWITCHING_ON)
@@ -1752,7 +1752,7 @@ static int s2mu205_fg_set_property(struct power_supply *psy,
 				}  else if ((val->intval == SEC_BAT_INBAT_FGSRC_SWITCHING_OFF) ||
 						(val->intval == SEC_BAT_FGSRC_SWITCHING_OFF)) {
 					s2mu205_update_reg_byte(fuelgauge->i2c, 0x25, 0x30, 0x30);
-					mdelay(1000);
+					msleep(1000);
 					s2mu205_read_reg_byte(fuelgauge->i2c, 0x25, &temp);
 					pr_info("%s: SW Vsys: fgsrc_switching_off: REG25:0x%02x, 0x25[5:4]=0x%x\n", __func__, temp, (temp & 0x30) >> 4);
 					if (val->intval == SEC_BAT_INBAT_FGSRC_SWITCHING_OFF)

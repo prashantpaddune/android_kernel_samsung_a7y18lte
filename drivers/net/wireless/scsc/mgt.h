@@ -466,6 +466,7 @@ void slsi_vif_deactivated(struct slsi_dev *sdev, struct net_device *dev);
 int slsi_handle_disconnect(struct slsi_dev *sdev, struct net_device *dev, u8 *peer_address, u16 reason,
 			   u8 *disassoc_rsp_ie, u32 disassoc_rsp_ie_len);
 int slsi_band_update(struct slsi_dev *sdev, int band);
+void slsi_band_cfg_update(struct slsi_dev *sdev, int band);
 int slsi_ip_address_changed(struct slsi_dev *sdev, struct net_device *dev, __be32 ipaddress);
 int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct net_device *dev);
 struct ieee80211_channel *slsi_find_scan_channel(struct slsi_dev *sdev, struct ieee80211_mgmt *mgmt, size_t mgmt_len, u16 freq);
@@ -556,6 +557,7 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct net_device *dev, bool hw_ava
 void slsi_scan_cleanup(struct slsi_dev *sdev, struct net_device *dev);
 void slsi_dump_stats(struct net_device *dev);
 int slsi_send_hanged_vendor_event(struct slsi_dev *sdev, u16 scsc_panic_code);
+int slsi_set_ext_cap(struct slsi_dev *sdev, struct net_device *dev, const u8 *ies, int ie_len, const u8 *ext_cap_mask);
 void slsi_update_supported_channels_regd_flags(struct slsi_dev *sdev);
 #ifdef CONFIG_SCSC_WLAN_HANG_TEST
 int slsi_test_send_hanged_vendor_event(struct net_device *dev);

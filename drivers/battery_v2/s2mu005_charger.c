@@ -77,7 +77,7 @@ static void s2mu005_test_read(struct i2c_client *i2c)
 	static int reg_list[] = {
 		0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11,
 		0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x2A,
-		0x51, 0x7E, 0x55, 0x5E, 0x7B
+		0x51, 0x7E, 0x55, 0x5E, 0x7B, 0x23, 0x26, 0xA7
 	};
 	u8 data;
 	char str[1016] = {0,};
@@ -169,7 +169,7 @@ static void s2mu005_charger_otg_control(struct s2mu005_charger_data *charger,
 			s2mu005_update_reg(charger->client, S2MU005_CHG_CTRL0,
 				5 << REG_MODE_SHIFT, REG_MODE_MASK);
 
-			mdelay(150);
+			msleep(150);
 			pr_info("%s: EVT4 OTG Control for factory mode\n", __func__);
 
 			/* set mode to Charger mode */
@@ -1804,6 +1804,7 @@ static int s2mu005_charger_probe(struct platform_device *pdev)
 	charger->ivr_on = false;
 	charger->slow_charging = false;
 	charger->input_current = 1000;
+	charger->cable_type = SEC_BATTERY_CABLE_NONE;
 
 	charger->pdata = devm_kzalloc(&pdev->dev, sizeof(*(charger->pdata)),
 			GFP_KERNEL);

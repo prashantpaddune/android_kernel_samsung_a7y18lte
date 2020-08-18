@@ -221,7 +221,7 @@ static int hx83102p_read_id(struct lcd_info *lcd)
 		priv->lcdconnected = lcd->connected = 0;
 		dev_info(&lcd->ld->dev, "%s: connected lcd is invalid\n", __func__);
 
-		if (!lcdtype && decon)
+		if (lcdtype && decon)
 			decon_abd_save_bit(&decon->abd, BITS_PER_BYTE * HX83102P_ID_LEN, cpu_to_be32(lcd->id_info.value), LDI_BIT_DESC_ID);
 	}
 
@@ -239,9 +239,8 @@ static int hx83102p_displayon_late(struct lcd_info *lcd)
 
 	DSI_WRITE(SEQ_SET_B9_PW, ARRAY_SIZE(SEQ_SET_B9_PW));
 	DSI_WRITE(SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
-	usleep_range(1000, 2000);
 	DSI_WRITE(SEQ_SET_B9_CLOSE_PW, ARRAY_SIZE(SEQ_SET_B9_CLOSE_PW));
-	usleep_range(1000, 2000);
+	msleep(30);	/* > 20 ms */
 
 	return ret;
 }
@@ -260,7 +259,7 @@ static int hx83102p_exit(struct lcd_info *lcd)
 	usleep_range(1000, 2000);
 	DSI_WRITE(SEQ_SLEEP_IN, ARRAY_SIZE(SEQ_SLEEP_IN));
 	DSI_WRITE(SEQ_SET_B9_CLOSE_PW, ARRAY_SIZE(SEQ_SET_B9_CLOSE_PW));
-	msleep(34);	/* > 2 frame */
+	msleep(45);	/* > 40 ms*/
 
 	return ret;
 }
@@ -716,6 +715,7 @@ static DEVICE_ATTR(conn_det, 0644, conn_det_show, conn_det_store);
 static void panel_conn_register(struct lcd_info *lcd)
 {
 	struct decon_device *decon = get_decon_drvdata(0);
+	struct abd_protect *abd = &decon->abd;
 	int gpio = 0, gpio_active = 0;
 
 	if (!decon) {
@@ -753,7 +753,7 @@ static void panel_conn_register(struct lcd_info *lcd)
 		return;
 	}
 
-	decon_abd_pin_register_handler(gpio_to_irq(gpio), panel_conn_det_handler, lcd);
+	decon_abd_pin_register_handler(abd, gpio_to_irq(gpio), panel_conn_det_handler, lcd);
 }
 
 static int match_dev_name(struct device *dev, void *data)

@@ -268,6 +268,30 @@ out:
 }
 __setup("androidboot.recovery_offset=", sec_debug_recovery_cause_setup);
 
+static unsigned long fmm_lock_offset;
+
+static int __init sec_debug_fmm_lock_offset(char *arg)
+{
+	fmm_lock_offset = simple_strtoul(arg, NULL, 10);
+	return 0;
+}
+
+early_param("sec_debug.fmm_lock_offset", sec_debug_fmm_lock_offset);
+
+static ssize_t store_FMM_lock(struct device *dev,
+                struct device_attribute *attr, const char *buf, size_t count)
+{
+	char lock;
+
+	sscanf(buf, "%c", &lock);
+	pr_info("%s: store %c in FMM_lock\n", __func__, lock);
+	sec_set_param(fmm_lock_offset, lock);
+
+        return count;
+}
+
+static DEVICE_ATTR(FMM_lock, 0220, NULL, store_FMM_lock);
+
 static int __init sec_debug_recovery_cause_init(void)
 {
 	struct device *dev;
@@ -280,6 +304,9 @@ static int __init sec_debug_recovery_cause_init(void)
 		pr_err("%s:Failed to create devce\n", __func__);
 
 	if (device_create_file(dev, &dev_attr_recovery_cause) < 0)
+		pr_err("%s: Failed to create device file\n", __func__);
+
+	if (device_create_file(dev, &dev_attr_FMM_lock) < 0)
 		pr_err("%s: Failed to create device file\n", __func__);
 
 	return 0;

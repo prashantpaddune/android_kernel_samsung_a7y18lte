@@ -117,6 +117,13 @@ config CM_OFFSET
 	help
 	  set Charging Mode Offset when you enable SEC_PARAM.
 
+config FMM_LOCK_OFFSET
+	int "FMM lock Offset"
+	default 0
+	depends on SEC_PARAM
+	help
+	  set FMM lock Offset when you enable SEC_PARAM.
+
 config SEC_EVENT_LOG
 	bool "Enable Event log parser"
 	depends on SEC_EXT
@@ -302,3 +309,8 @@ config SEC_PERIPHERAL_SECURE_CHK
 	help
 	  This option supports secure check
 
+config SEC_DEBUG_SNAPSHOT_DISABLE
+	bool "Disable EXYNOS SNAPSHOT logging"
+	default n
+	help
+	  This option blocks exynos snapshot logging

@@ -148,12 +148,20 @@ EXPORT_SYMBOL_GPL(put_online_cpus);
  * get_online_cpus() not an api which is called all that often.
  *
  */
+#ifndef CONFIG_TINY_RCU
+extern int rcu_expedited;
+static int rcu_expedited_bak;
+#endif
 void cpu_hotplug_begin(void)
 {
 	DEFINE_WAIT(wait);
 
 	cpu_hotplug.active_writer = current;
 	cpuhp_lock_acquire();
+#ifndef CONFIG_TINY_RCU
+	rcu_expedited_bak = rcu_expedited;
+	rcu_expedited = 0;
+#endif
 
 	for (;;) {
 		mutex_lock(&cpu_hotplug.lock);
@@ -170,6 +178,9 @@ void cpu_hotplug_done(void)
 {
 	cpu_hotplug.active_writer = NULL;
 	mutex_unlock(&cpu_hotplug.lock);
+#ifndef CONFIG_TINY_RCU
+	rcu_expedited = rcu_expedited_bak;
+#endif
 	cpuhp_lock_release();
 }
 

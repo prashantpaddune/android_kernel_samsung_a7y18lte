@@ -2746,7 +2746,7 @@ void mfc_mst_routine(struct mfc_charger_data *charger, u8 *irq_src)
 		mfc_reg_write(charger->client, MFC_INT_A_CLEAR_H_REG, irq_src[1]); // clear int
 		mfc_set_cmd_l_reg(charger, 0x20, MFC_CMD_CLEAR_INT_MASK); // command
 		
-		mdelay(10);
+		msleep(10);
 	}
 }
 

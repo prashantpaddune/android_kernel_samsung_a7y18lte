@@ -349,7 +349,7 @@ static void slsi_fw_test_connect_start_ap(struct slsi_dev *sdev, struct net_devi
 	if (WARN_ON(!ieee80211_is_assoc_req(mgmt->frame_control) &&
 		    !ieee80211_is_reassoc_req(mgmt->frame_control)))
 		return;
-	peer_index = fapi_get_u16(skb, u.mlme_procedure_started_ind.association_identifier);
+	peer_index = fapi_get_u16(skb, u.mlme_procedure_started_ind.peer_index);
 
 	peer = slsi_peer_add(sdev, dev, mgmt->sa, peer_index);
 	if (WARN_ON(!peer))
@@ -363,23 +363,23 @@ static void slsi_fw_test_connected_network(struct slsi_dev *sdev, struct net_dev
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_peer  *peer = NULL;
-	u16               aid = fapi_get_u16(skb, u.mlme_connected_ind.association_identifier);
+	u16               peer_index = fapi_get_u16(skb, u.mlme_connected_ind.peer_index);
 
 	SLSI_UNUSED_PARAMETER(fwtest);
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->vif_mutex));
 
-	SLSI_NET_DBG1(dev, SLSI_FW_TEST, "Network Peer Connect(vif:%d, aid:%d)\n", ndev_vif->ifnum, aid);
+	SLSI_NET_DBG1(dev, SLSI_FW_TEST, "Network Peer Connect(vif:%d, peer_index:%d)\n", ndev_vif->ifnum, peer_index);
 	WARN(!ndev_vif->is_fw_test, "!is_fw_test");
 
 	if (WARN(!ndev_vif->activated, "Not Activated"))
 		return;
 
-	if (WARN_ON(aid > SLSI_PEER_INDEX_MAX))
+	if (WARN_ON(peer_index > SLSI_PEER_INDEX_MAX))
 		return;
 
-	peer = slsi_get_peer_from_qs(sdev, dev, aid - 1);
-	if (WARN(!peer, "Peer(aid:%d) Not Found", aid))
+	peer = slsi_get_peer_from_qs(sdev, dev, peer_index - 1);
+	if (WARN(!peer, "Peer(peer_index:%d) Not Found", peer_index))
 		return;
 
 	slsi_ps_port_control(sdev, dev, peer, SLSI_STA_CONN_STATE_CONNECTED);

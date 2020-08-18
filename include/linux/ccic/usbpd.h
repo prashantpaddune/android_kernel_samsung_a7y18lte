@@ -45,7 +45,7 @@
 #if defined(CONFIG_SEC_FACTORY)
 #define tTypeCSinkWaitCap       (6100)	/* for UCT100 */
 #else
-#define tTypeCSinkWaitCap       (310)	/* 310~620 ms */
+#define tTypeCSinkWaitCap       (460)	/* 310~620 ms */
 #endif
 #define tTypeCSendSourceCap (100) /* 100~200ms Q*/
 #define tSrcRecover (880) /* 660~1000ms */
@@ -602,6 +602,7 @@ struct usbpd_data {
 	int					msg_id;
 	int					specification_revision;
 	struct mutex		accept_mutex;
+	int 			is_prswap;
 
 	struct timeval		time1;
 	struct timeval		time2;
