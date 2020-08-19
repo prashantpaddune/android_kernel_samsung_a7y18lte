@@ -22,7 +22,7 @@ CR_TC=/home/prashantp/Downloads/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gn
 CR_DTS=arch/arm64/boot/dts
 CR_DTB=$CR_DIR/boot.img-dtb
 # Kernel Variables
-CR_VERSION=V1.0
+CR_VERSION=V2.0
 CR_NAME=Quantum_Quack
 CR_JOBS=5
 CR_ANDROID=q
